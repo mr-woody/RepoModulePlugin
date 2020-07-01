@@ -1,0 +1,59 @@
+ext {
+    applicationId = 'com.okay.phone.teacher'
+
+
+    androids = [
+            compileSdkVersion: 28,
+            minSdkVersion    : 19,
+            targetSdkVersion : 28,
+            buildToolsVersion: '28.0.3',
+            multiDexEnabled  : true
+    ]
+
+    //当前用的签名
+    signInfo = [
+            release: [
+                    storeFilePath: '../keystore/component.keystore',
+                    storePassword: 'dianping123',
+                    keyAlias     : 'wddp_keystore',
+                    keyPassword  : 'dianping123'
+            ],
+            debug  : [
+                    storeFilePath: '../keystore/component_debug.keystore',
+                    storePassword: 'dianping123',
+                    keyAlias     : 'wddp_keystore_debug',
+                    keyPassword  : 'dianping123'
+            ]
+    ]
+
+
+    versions = [
+            gradleVersion          : "3.4.2",
+
+            kotlinVersion          : "1.3.30",
+
+            supportLibraryVersion  : "28.0.0",
+            constraintLayoutVersion: "1.1.3",
+
+            //test
+            testJunit              : "4.12",
+            testRunner             : "1.0.2",
+            testEspressoCore       : "3.0.2"
+    ]
+
+
+    dependencies = [
+            kotlinStdlibJdk7   : "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${versions.kotlinVersion}",
+            kotlinScriptRuntime: "org.jetbrains.kotlin:kotlin-script-runtime:${versions.kotlinVersion}",
+            appcompatV7        : "com.android.support:appcompat-v7:${versions.supportLibraryVersion}",
+            constraintLayout   : "com.android.support.constraint:constraint-layout:${versions.constraintLayoutVersion}",
+            supportDesign      : "com.android.support:design:${versions.supportLibraryVersion}",
+            supportAnnotations : "com.android.support:support-annotations:${versions.supportLibraryVersion}",
+
+            testJunit          : "junit:junit:${versions.testJunit}",
+            testRunner         : "com.android.support.test:runner:${versions.testRunner}",
+            testEspressoCore   : "com.android.support.test.espresso:espresso-core:${versions.testEspressoCore}",
+            tinker             : "com.tinkerpatch.sdk:tinkerpatch-android-sdk:${versions.tinker}",
+    ]
+
+}

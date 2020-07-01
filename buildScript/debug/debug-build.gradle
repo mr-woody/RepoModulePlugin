@@ -1,0 +1,12 @@
+ext {
+    isDebug = {
+        return project.hasProperty('isModuleDebug') && Boolean.parseBoolean(project.properties.get('isModuleDebug'))
+    }
+
+    /**
+     * 日志打印
+     */
+    log = { String msg ->
+        if (isDebug()) System.out.println("${getDisplayName()} >> ${msg}")
+    }
+}

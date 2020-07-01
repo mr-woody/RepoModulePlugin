@@ -1,0 +1,65 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileOptions.encoding = "UTF-8"
+    compileSdkVersion androids.compileSdkVersion
+    buildToolsVersion androids.buildToolsVersion
+    defaultConfig {
+        minSdkVersion androids.minSdkVersion
+        targetSdkVersion androids.targetSdkVersion
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+
+    /**
+     * 程序在编译的时候会检查lint，有任何错误提示会停止build，我们可以关闭这个开关
+     */
+    lintOptions {
+        //即使报错也不会停止打包
+        abortOnError false        // true by default
+        //打包release版本的时候进行检测
+        checkReleaseBuilds false
+        //是否仅检查错误（忽略警告）
+        ignoreWarnings true       // false by default
+    }
+
+
+
+}
+
+
+configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        def requested = details.requested
+        if (requested.group == 'com.android.support') {
+            if (!requested.name.startsWith("multidex")) {
+                details.useVersion versions.supportLibraryVersion
+            }
+        }
+    }
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 30, 'days'
+}
+
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+
+    implementation rootProject.ext.dependencies.kotlinStdlibJdk7
+    implementation rootProject.ext.dependencies.appcompatV7
+    implementation rootProject.ext.dependencies.constraintLayout
+
+    implementation 'com.okay.sample.template:sample-template:1.1.2'
+    kapt "com.okay.sample.template.annotation.processor:processor-library:1.0.1"
+    annotationProcessor "com.okay.sample.template.annotation.processor:processor-library:1.0.1"
+}

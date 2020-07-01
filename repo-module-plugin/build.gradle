@@ -1,0 +1,23 @@
+apply plugin: 'groovy'
+
+dependencies {
+
+    implementation "com.android.tools.build:gradle:${versions.gradleVersion}"
+
+    //gradle sdk
+    implementation gradleApi()
+    //groovy sdk
+    implementation localGroovy()
+}
+
+ext {
+    //repo-module-plugin
+    pom_project = [
+            version : '1.0.2-SNAPSHOT',
+            group_id : "com.okay.module",
+            artifact_id : "repo-plugin",
+            description : "Android repo-module-plugin library"
+    ]
+}
+
+apply from: "upload.gradle"

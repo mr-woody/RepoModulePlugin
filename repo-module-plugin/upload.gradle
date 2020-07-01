@@ -1,0 +1,40 @@
+apply plugin: 'maven'
+Properties localProperties = new Properties()
+localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+Properties gradleProperties = new Properties()
+gradleProperties.load(project.rootProject.file('gradle.properties').newDataInputStream())
+
+
+def IS_USE_LOCAL_MAVEN = gradleProperties.getProperty("maven.is_use_local_maven").toBoolean()
+
+task sourcesJar(type: Jar) {
+    from project.file('src/main/groovy')
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+uploadArchives {
+    configuration = configurations.archives
+    repositories {
+        mavenDeployer {
+            if(IS_USE_LOCAL_MAVEN){
+                // 本地仓库路径
+                repository(url: gradleProperties.getProperty("maven.local_maven_url").toString())
+            }else {
+                repository(url: gradleProperties.getProperty("maven.remote_maven_url").toString()) {
+                    authentication(userName: localProperties.getProperty("maven.user"), password: localProperties.getProperty("maven.password"))
+                }
+            }
+            pom.project {
+                version project.ext.pom_project.version
+                artifactId project.ext.pom_project.artifact_id
+                groupId project.ext.pom_project.group_id
+                description project.ext.pom_project.description
+            }
+        }
+    }
+}

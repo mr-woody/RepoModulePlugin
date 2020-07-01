@@ -1,0 +1,164 @@
+apply plugin: 'maven'
+
+Properties localProperties = new Properties()
+localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+Properties gradleProperties = new Properties()
+gradleProperties.load(project.rootProject.file('gradle.properties').newDataInputStream())
+
+
+def IS_USE_LOCAL_MAVEN = gradleProperties.getProperty("maven.is_use_local_maven").toBoolean()
+
+
+afterEvaluate {
+    def findBundleTask = {String name->
+        def task = tasks.findByName("bundle${name}Aar")
+        if(null == task){
+            task = tasks.findByName("bundle${name}")
+        }
+        return task
+    }
+    android.libraryVariants.each{variant->
+
+        def hasFlavors = !variant.flavorName.isEmpty()
+
+        def artifactIdSuffix = hasFlavors ? variant.flavorName.replace('_', '-').capitalize() : ''
+        variant.productFlavors.each { flavor ->
+            def flavorArtifactIdSuffix = flavor.ext.has('artifactIdSuffix') ? flavor.ext.artifactIdSuffix : flavor.name
+            if (!flavorArtifactIdSuffix.isEmpty()) {
+                artifactIdSuffix = artifactIdSuffix.replace(flavor.name.capitalize(), "${flavorArtifactIdSuffix}")
+            } else {
+                artifactIdSuffix = artifactIdSuffix.replace(flavor.name.capitalize(), "")
+            }
+        }
+
+        String variantName = variant.name.capitalize()
+
+        /**
+         * Includes
+         */
+        def sourceDirs = variant.sourceSets.collect {
+            it.javaDirectories
+        }
+        def javadoc = task("${variant.name}Javadoc", type: Javadoc) {
+            if(variant.hasProperty('javaCompileProvider')){
+                // for AGP 3.3+
+                source = variant.javaCompileProvider.get().source
+            }else{
+                source = variant.javaCompile.source
+            }
+            options.encoding = 'utf-8'
+            destinationDir = file("${buildDir}/docs/javadoc${hasFlavors ? artifactIdSuffix : ""}")
+            ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
+            classpath += files(ext.androidJar)
+            classpath += files(configurations.compile)
+            exclude '**/BuildConfig.java'
+            exclude '**/R.java'
+            failOnError false
+        }
+
+        def javadocJar = task("${variant.name}JavadocJar", type: Jar, dependsOn: javadoc) {
+            classifier = 'javadoc'
+            from javadoc.destinationDir
+        }
+
+        def sourcesJar = task("${variant.name}SourcesJar", type: Jar) {
+            classifier = 'sources'
+            from sourceDirs
+        }
+
+        artifacts {
+            archives javadocJar
+            archives sourcesJar
+        }
+
+        def upload = tasks.create("uploadArchives${variant.name.capitalize()}", Upload){
+            configuration = configurations.archives
+            repositories {
+                mavenDeployer {
+
+                    addFilter("${variant.name}") {artifact, file ->
+                        true
+                    }
+
+                    if(IS_USE_LOCAL_MAVEN){
+                        // 本地仓库路径
+                        repository(url: gradleProperties.getProperty("maven.local_maven_url").toString())
+                    }else {
+                        repository(url: gradleProperties.getProperty("maven.remote_maven_url").toString()) {
+                            authentication(userName: localProperties.getProperty("maven.user"), password: localProperties.getProperty("maven.password"))
+                        }
+                    }
+                    pom("${variant.name}").project {
+                        version project.ext.pom_project.version
+                        artifactId project.ext.pom_project.artifact_id + "-" + variant.name
+                        groupId project.ext.pom_project.group_id
+                        description project.ext.pom_project.description
+                        packaging "aar"
+                    }
+
+                    pom("${variant.name}").withXml{
+                        def root = asNode()
+                        def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
+                        def addDep = {
+                            if (it.group == null) return
+                            def dependencyNode = depsNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', it.group)
+                            dependencyNode.appendNode('artifactId', it.name)
+                            dependencyNode.appendNode('version', it.version)
+                            if (it.hasProperty('optional') && it.optional) {
+                                dependencyNode.appendNode('optional', 'true')
+                            }
+
+                            if(it instanceof ModuleDependency){
+                                it.artifacts.each {artifact ->
+                                    if(!artifact.classifier.isEmpty()){
+                                        dependencyNode.appendNode('classifier', artifact.classifier)
+                                    }
+                                    if(!artifact.type.isEmpty()){
+                                        dependencyNode.appendNode('type', artifact.type)
+                                    }
+                                }
+                            }
+
+                            if (!it.transitive) {
+                                def exclusionNode = dependencyNode.appendNode('exclusions').appendNode('exclusion')
+                                exclusionNode.appendNode('groupId', '*')
+                                exclusionNode.appendNode('artifactId', '*')
+                            } else if (!it.properties.excludeRules.empty) {
+                                def exclusionsNode = dependencyNode.appendNode('exclusions')
+                                it.properties.excludeRules.each { rule ->
+                                    def exclusionNode = exclusionsNode.appendNode('exclusion')
+                                    exclusionNode.appendNode('groupId', rule.group ?: '*')
+                                    exclusionNode.appendNode('artifactId', rule.module ?: '*')
+                                }
+                            }
+                        }
+                        // Add deps that everyone has
+                        configurations.api.getDependencies().each addDep
+                        configurations.implementation.getDependencies().each addDep
+
+                        configurations["${variant.buildType.name}Implementation"].getDependencies().each addDep
+                        configurations["${variant.buildType.name}Api"].getDependencies().each addDep
+
+                        // Add flavor specific deps
+                        if (!variant.flavorName.isEmpty()) {
+                            configurations["${variant.name}Implementation"].getDependencies().each addDep
+                            configurations["${variant.name}Api"].getDependencies().each addDep
+                            def flavorName = variant.flavorName
+                            configurations["${flavorName}Implementation"].getDependencies().each addDep
+                            configurations["${flavorName}Api"].getDependencies().each addDep
+                        }
+                    }
+                }
+            }
+        }
+        upload.group = 'upload'
+        upload.dependsOn(findBundleTask(variantName))
+        upload.doFirst {
+            artifacts{
+                archives findBundleTask(variantName)
+            }
+        }
+    }
+}

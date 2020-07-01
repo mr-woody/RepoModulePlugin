@@ -1,0 +1,199 @@
+apply plugin: 'com.android.application'
+
+import groovy.xml.Namespace
+import java.util.regex.Pattern
+
+//ADDED from /Users/cz/Documents/AndroidProject/TeacherPhone/app/src/main/AndroidManifest.xml:7:5-81
+//    activity#com.okay.phone.person.center.loginphone.LoginPhoneActivity
+//    ADDED from [:person_center] /Users/cz/Documents/AndroidProject/TeacherPhone/person_center/build/intermediates/library_manifest/debug/AndroidManifest.xml:22:9-26:58
+
+//    uses-permission#android.permission.REQUEST_INSTALL_PACKAGES
+//    ADDED from [com.okay.appupdate.library:app-update:1.0.5] /Users/cz/.gradle/caches/transforms-2/files-2.1/40e88bf437c5a20ca9053075832249a9/AndroidManifest.xml:12:5-83
+
+//    provider#android.support.v4.content.FileProvider
+//    ADDED from [com.okay.appupdate.library:app-update:1.0.5] /Users/cz/.gradle/caches/transforms-2/files-2.1/40e88bf437c5a20ca9053075832249a9/AndroidManifest.xml:15:9-23:20
+
+class ComponentInfo{
+    final String type
+    final String name
+    final String library
+
+    ComponentInfo(String type, String name, String library) {
+        this.type = type
+        this.name = name
+        this.library = library
+    }
+
+
+    @Override
+    String toString() {
+        return "[" + type + ']' +
+                ", name='" + name + '\'' +
+                ", library='" + library + '\'' +
+                '}'
+    }
+}
+
+/**
+ * @author Created by cz
+ * @date 2020-03-31 11:43
+ * @email chenzhen@okay.cn
+ */
+class AndroidManifest {
+
+    ManifestInformation parseManifestFile(File file){
+        try {
+            return parserAndroidManifest(file)
+        } catch (IOException e) {
+            e.printStackTrace()
+        }
+        return null
+    }
+
+    private ManifestInformation parserAndroidManifest(File manifestFile) throws IOException {
+        ManifestInformation manifestInformation=new ManifestInformation()
+        if(!manifestFile.exists()){
+            System.out.println("File:$manifestFile.path not exists!")
+        } else {
+            def parser = new XmlParser()
+            def ns = new Namespace('http://schemas.android.com/apk/res/android', 'android')
+            def manifest = parser.parse(manifestFile)
+            manifest.application.activity.each { activity ->
+                def attributes = activity.attributes()
+                manifestInformation.addActivity(new ActivityItem(attributes[ns.name],attributes[ns.taskAffinity]))
+            }
+            manifest.application.service.each { service ->
+                def attributes = service.attributes()
+                manifestInformation.addService(attributes[ns.name])
+            }
+            manifest.application.provider.each { provider ->
+                def attributes = provider.attributes()
+                manifestInformation.addContentProvider(attributes[ns.name])
+            }
+            manifest.application.receiver.each { receiver ->
+                def attributes = receiver.attributes()
+                manifestInformation.addBroadCast(attributes[ns.name])
+            }
+        }
+        return manifestInformation;
+    }
+
+    class ActivityItem{
+        String name
+        String taskAffinity
+
+        public ActivityItem(String name, String taskAffinity) {
+            this.name = name
+            this.taskAffinity = taskAffinity
+        }
+    }
+
+    class ManifestInformation{
+        public String application
+        public List<ActivityItem> activityList=new ArrayList<>()
+        public List<String> broadcastList=new ArrayList<>()
+        public List<String> contentProviderList=new ArrayList<>()
+        public List<String> serviceList=new ArrayList<>()
+
+        ManifestInformation() {
+        }
+
+        void addActivity(ActivityItem activity){
+            activityList.add(activity)
+        }
+
+        void addContentProvider(String contentProvider){
+            contentProviderList.add(contentProvider)
+        }
+
+        void addService(String service){
+            serviceList.add(service)
+        }
+        void addBroadCast(String broadCast){
+            broadcastList.add(broadCast)
+        }
+    }
+}
+
+
+task analysisDebugManifest(dependsOn: build){
+    println("analyzer start work!")
+    def findComponent=false
+    def componentType = null
+    def componentName = null
+    def componentList = []
+
+
+    def manifestInformation=null
+    def androidManifest = new AndroidManifest()
+    def fillFolder=new File(project.buildDir, "intermediates/manifests/full")
+    if(fillFolder.exists()){
+        def listFiles = fillFolder.listFiles()
+        if(listFiles){
+            def manifestFile=new File(listFiles[0],"debug/AndroidManifest.xml")
+            manifestInformation = androidManifest.parseManifestFile(manifestFile)
+        }
+    }
+    def outputLogFile = new File(project.buildDir, "outputs/logs/")
+    def outputFiles = outputLogFile.listFiles()
+    if(outputFiles){
+        //manifest-merger-lineB-debug-report.txt
+        def reportFile=outputFiles[0]
+        println "analyze the file:${reportFile.path}"
+        Pattern pattern = ~/.+(\[(.+)\]).+/
+        reportFile.eachLine { line->
+            def clearLine=line.trim()
+            if(findComponent){
+                findComponent=false
+                def matcher = pattern.matcher(clearLine)
+                def libraryName
+                if(matcher){
+                    libraryName = matcher.group(1)
+                } else {
+                    libraryName="[:${project.name}]"
+                }
+                def componentInfo=new ComponentInfo(componentType,componentName,libraryName)
+                componentList<<componentInfo
+            }
+            if(clearLine.startsWith("uses-permission#")||clearLine.startsWith("activity#")||
+                    clearLine.startsWith("provider#")||clearLine.startsWith("service#")||clearLine.startsWith("receiver#")){
+                findComponent=true
+            }
+            if(findComponent){
+                def componentInfoArray=clearLine.split("#")
+                componentType=componentInfoArray[0]
+                componentName=componentInfoArray[1]
+            }
+        }
+        println "====================================================="
+        componentList.groupBy { it.type }.each { type,list->
+            println("### $type")
+            list.each{ println("\t"+it) }
+            println()
+        }
+
+        if(manifestInformation){
+            def taskDict=[:]
+            componentList.findAll { it.type=="activity" }.each{ activity->
+                def activityItem=manifestInformation.activityList.find{ it.name==activity.name }
+                if(!activityItem){
+                    println "Activity:${activity.name} cannot found in the manifest file!"
+                } else {
+                    def taskAffinity=activityItem.taskAffinity?:"default"
+                    if(!taskDict.containsKey(taskAffinity)){
+                        taskDict.put(taskAffinity,[])
+                    }
+                    taskDict[taskAffinity]<<activity.name
+                }
+            }
+            println "====================================================="
+            taskDict.each {taskAffinity,list->
+                println("### $taskAffinity(${list.size()})")
+                list.each{ println("\t"+it) }
+                println()
+            }
+            println "====================================================="
+        }
+
+    }
+}
