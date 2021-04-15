@@ -52,12 +52,12 @@ apply plugin: 'com.woodys.module.repo'
     <?xml version='1.0' encoding='UTF-8'?>
     <repo>
     
-        <default fetch="http://git.okjiaoyu.cn/stu/" />
+        <default fetch="http://git.xxx.cn/stu/" />
     
         <project origin="repomoduleplugin.git">
     
             <module name="business" path="/common-business"  origin="p_common-business.git" />
-            <module name="resource" path="/common-resource" local="./repo_modules" origin="http://git.okjiaoyu.cn/stu/p_common-resource.git"/>
+            <module name="resource" path="/common-resource" local="./repo_modules" origin="http://git.xxx.cn/stu/p_common-resource.git"/>
     
         </project>
     
@@ -118,7 +118,7 @@ apply plugin: 'com.woodys.module.repo'
  
 ### 其他文件
 
-![](http://git.okjiaoyu.cn/stu/repomoduleplugin/raw/master/image/author.png)
+![](http://git.xxx.cn/stu/repomoduleplugin/raw/master/image/author.png)
     
 
 
