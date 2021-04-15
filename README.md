@@ -20,14 +20,12 @@
 ```
 buildscript {
     repositories {
-        maven{ url "http://10.60.0.100:8081/repository/okayclient_snapshot/"}
-        google()
-        jcenter()
-        mavenCentral()
+        ···
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
         //repo 插件
-        classpath "com.okay.module:repo-plugin:1.0.2-SNAPSHOT"
+        classpath "com.github.mr-woody:RepoModulePlugin:1.0.0"
     }
 }
 
@@ -42,7 +40,7 @@ buildscript {
 
 ```
 
-apply plugin: 'com.okay.module.repo'
+apply plugin: 'com.woodys.module.repo'
 
 ```
 

@@ -58,8 +58,4 @@ dependencies {
     implementation rootProject.ext.dependencies.kotlinStdlibJdk7
     implementation rootProject.ext.dependencies.appcompatV7
     implementation rootProject.ext.dependencies.constraintLayout
-
-    implementation 'com.okay.sample.template:sample-template:1.1.2'
-    kapt "com.okay.sample.template.annotation.processor:processor-library:1.0.1"
-    annotationProcessor "com.okay.sample.template.annotation.processor:processor-library:1.0.1"
 }

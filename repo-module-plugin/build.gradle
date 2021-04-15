@@ -14,10 +14,10 @@ ext {
     //repo-module-plugin
     pom_project = [
             version : '1.0.2-SNAPSHOT',
-            group_id : "com.okay.module",
+            group_id : "com.woodys.module",
             artifact_id : "repo-plugin",
             description : "Android repo-module-plugin library"
     ]
 }
 
-apply from: "upload.gradle"
+//apply from: "upload.gradle"

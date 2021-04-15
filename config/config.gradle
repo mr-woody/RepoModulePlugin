@@ -1,5 +1,5 @@
 ext {
-    applicationId = 'com.okay.phone.teacher'
+    applicationId = 'com.woodys.repo.module.plugin.sample'
 
 
     androids = [

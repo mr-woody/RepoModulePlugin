@@ -1,16 +1,16 @@
 buildscript {
     repositories {
-        maven{ url "http://10.60.0.100:8081/repository/okayclient_snapshot/"}
+        maven { url "https://jitpack.io" }
         google()
         jcenter()
         mavenCentral()
     }
     dependencies {
         //repo 插件
-        classpath "com.okay.module:repo-plugin:1.0.2-SNAPSHOT"
+        //classpath "com.github.mr-woody:RepoModulePlugin:1.0.0"
     }
 }
 
-apply plugin: 'com.okay.module.repo'
+//apply plugin: 'com.woodys.module.repo'
 
 include ':sample', ':repo-module-plugin'

@@ -14,7 +14,7 @@ import android.widget.TextView
 import com.simple.R
 
 /**
- * Created by cz on 17/12/13.
+ * Created by woodys on 17/12/13.
  * 一个旋转进度对话框
  */
 class ProgressDialogFragment : DialogFragment() {

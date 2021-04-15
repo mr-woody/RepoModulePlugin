@@ -22,16 +22,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.simple.ui.SampleActivity"/>
-        <activity android:name="com.simple.ui.DownloadImageActivity"/>
-        <activity android:name="com.simple.ui.GeneralHttpActivity"/>
-        <activity android:name="com.simple.ui.LifecycleHttpActivity"/>
-        <activity android:name="com.simple.ui.MockHttpActivity"/>
-        <activity android:name="com.simple.ui.ModuleHttpActivity"/>
-        <activity android:name="com.simple.ui.SyncHttpActivity"/>
-        <activity android:name="com.simple.ui.UpdateBaseUrlHttpActivity"/>
-        <activity android:name="com.simple.ui.UploadHttpActivity"/>
-        <activity android:name="com.simple.ui.UploadImageActivity"/>
     </application>
 
 </manifest>
