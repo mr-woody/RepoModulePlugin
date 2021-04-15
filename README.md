@@ -116,9 +116,6 @@ apply plugin: 'com.woodys.module.repo'
 
   ```
  
-### 其他文件
-
-![](http://git.xxx.cn/stu/repomoduleplugin/raw/master/image/author.png)
     
 
 
